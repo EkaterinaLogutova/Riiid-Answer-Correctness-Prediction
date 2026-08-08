@@ -1,1 +1,4 @@
-/riiid-test-answer-prediction
+/Riiid Answer Correctness Prediction
+/Riiid-Answer-Correctness-Prediction/data/raw/lectures.csv
+/Riiid-Answer-Correctness-Prediction/data/raw/train.csv
+/Riiid-Answer-Correctness-Prediction/data/raw/questions.csv
