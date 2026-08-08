@@ -4,6 +4,8 @@
 # Результаты обработки данных
 /data/processed/*
 !/data/processed/.gitkeep
+/data/mart_cache/*
+
 # Старая распакованная папка Kaggle
 /Riiid_Answer_Correctness_Prediction/
 
