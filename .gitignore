@@ -1,4 +1,16 @@
-/Riiid Answer Correctness Prediction
-/Riiid-Answer-Correctness-Prediction/data/raw/lectures.csv
-/Riiid-Answer-Correctness-Prediction/data/raw/train.csv
-/Riiid-Answer-Correctness-Prediction/data/raw/questions.csv
+# Исходные данные Kaggle
+/data/raw/*.csv
+
+# Результаты обработки данных
+/data/processed/*
+!/data/processed/.gitkeep
+
+# Старая распакованная папка Kaggle
+/Riiid Answer Correctness Prediction/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Python
+__pycache__/
+*.pyc
