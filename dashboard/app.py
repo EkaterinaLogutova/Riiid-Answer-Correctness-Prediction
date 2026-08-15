@@ -8,7 +8,9 @@ from data_loader import (
 
 from filter import (
     apply_part_filter,
+    apply_difficulty_filter,
     apply_progress_segment_filter,
+    apply_stage_filter,
     apply_min_attempts_filter,
 )
 
@@ -61,6 +63,7 @@ st.sidebar.header("Фильтры")
 filtered_questions = questions.copy()
 filtered_questions = apply_part_filter(filtered_questions)
 filtered_questions = apply_min_attempts_filter(filtered_questions)
+filtered_questions = apply_difficulty_filter(filtered_questions)
 
 filtered_users = users.copy()
 filtered_users = apply_progress_segment_filter(filtered_users)

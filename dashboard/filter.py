@@ -33,6 +33,15 @@ def apply_progress_segment_filter(
 ) -> pd.DataFrame:
     return multiselect_filter(df, column, "Progress segment")
 
+def apply_difficulty_filter(
+    df: pd.DataFrame,
+    column: str = "difficulty_level",
+) -> pd.DataFrame:
+    return multiselect_filter(
+        df,
+        column,
+        "Question difficulty",
+    )
 
 def apply_stage_filter(
     df: pd.DataFrame,
