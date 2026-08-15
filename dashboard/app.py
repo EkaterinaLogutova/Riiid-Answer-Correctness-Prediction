@@ -10,7 +10,6 @@ from filter import (
     apply_part_filter,
     apply_difficulty_filter,
     apply_progress_segment_filter,
-    apply_stage_filter,
     apply_min_attempts_filter,
 )
 
@@ -55,19 +54,41 @@ topics = load_mart_topics()
 
 
 # ============================================================
-# ФИЛЬТРЫ
+# ФИЛЬТРЫ — ЗАКРЕПЛЁННАЯ БОКОВАЯ ПАНЕЛЬ
 # ============================================================
 
-st.sidebar.header("Фильтры")
+# Все виджеты фильтров создаются внутри st.sidebar.
+# Поэтому панель остаётся доступной при прокрутке дашборда,
+# а изменение любого фильтра вызывает перерасчёт страницы.
 
-filtered_questions = questions.copy()
-filtered_questions = apply_part_filter(filtered_questions)
-filtered_questions = apply_min_attempts_filter(filtered_questions)
-filtered_questions = apply_difficulty_filter(filtered_questions)
+with st.sidebar:
+    st.header("Фильтры")
 
-filtered_users = users.copy()
-filtered_users = apply_progress_segment_filter(filtered_users)
+    st.subheader("Вопросы")
 
+    filtered_questions = questions.copy()
+    filtered_questions = apply_part_filter(
+        filtered_questions
+    )
+    filtered_questions = apply_min_attempts_filter(
+        filtered_questions
+    )
+    filtered_questions = apply_difficulty_filter(
+        filtered_questions
+    )
+
+    st.divider()
+
+    st.subheader("Пользователи")
+
+    filtered_users = users.copy()
+    filtered_users = apply_progress_segment_filter(
+        filtered_users
+    )
+
+
+# Для тематических графиков пока используется mart_topics
+# без дополнительных фильтров.
 filtered_topics = topics.copy()
 
 
