@@ -158,7 +158,7 @@ def build_difficulty_chart(
                 "<b>Тема %{customdata[0]}</b><br>"
                 "Сложность: %{y:.1%}<br>"
                 "Accuracy: %{customdata[1]:.1%}<br>"
-                "Попытки: %{customdata[2]:,}"
+                "Попыток: %{customdata[2]:,}"
                 "<extra></extra>"
             ),
         )
@@ -215,7 +215,7 @@ def render_difficulty_chart(
 
     st.plotly_chart(
         fig,
-        use_container_width=True,
+        width="stretch",
         config={
             "displayModeBar": False,
             "responsive": True,
