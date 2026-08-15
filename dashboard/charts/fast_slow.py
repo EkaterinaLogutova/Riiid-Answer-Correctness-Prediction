@@ -1,5 +1,5 @@
 import pandas as pd
-import matplotlib.pyplot as plt
+import plotly.graph_objects as go
 import streamlit as st
 
 
@@ -23,6 +23,10 @@ def render_fast_slow_chart(
     Никаких пересчётов из mart_events здесь нет.
     """
 
+    # --------------------------------------------------------
+    # Проверка необходимых полей
+    # --------------------------------------------------------
+
     missing = [
         column
         for column in REQUIRED_COLUMNS
@@ -35,6 +39,10 @@ def render_fast_slow_chart(
             + ", ".join(missing)
         )
         return
+
+    # --------------------------------------------------------
+    # Та же самая логика расчёта, что была в matplotlib
+    # --------------------------------------------------------
 
     # Средние доли по выбранной выборке вопросов.
     chart_data = pd.DataFrame(
@@ -51,79 +59,100 @@ def render_fast_slow_chart(
         index=["Correct", "Incorrect"],
     )
 
+    # Переводим доли в проценты
     chart_data *= 100
 
     # --------------------------------------------------------
-    # Chart
+    # Plotly
     # --------------------------------------------------------
 
-    fig, ax = plt.subplots(figsize=(8, 5))
+    fig = go.Figure()
 
-    x = chart_data.columns
-
-    correct = chart_data.loc["Correct"]
-    incorrect = chart_data.loc["Incorrect"]
-
-    ax.bar(
-        x,
-        correct,
-        label="Correct",
-    )
-
-    ax.bar(
-        x,
-        incorrect,
-        bottom=correct,
-        label="Incorrect",
-    )
-
-    ax.set_ylim(0, 100)
-
-    ax.set_ylabel("Share of answers, %")
-
-    ax.set_title(
-        "Correct and incorrect answers by response speed"
-    )
-
-    ax.legend(
-        title="Answer type"
-    )
-
-    # --------------------------------------------------------
-    # Labels
-    # --------------------------------------------------------
-
-    for i, category in enumerate(x):
-
-        correct_value = correct[category]
-        incorrect_value = incorrect[category]
-
-        ax.text(
-            i,
-            correct_value / 2,
-            f"{correct_value:.1f}%",
-            ha="center",
-            va="center",
+    # Correct
+    fig.add_trace(
+        go.Bar(
+            x=chart_data.columns,
+            y=chart_data.loc["Correct"],
+            name="Correct",
+            text=[
+                f"{value:.1f}%"
+                for value in chart_data.loc["Correct"]
+            ],
+            textposition="inside",
+            hovertemplate=(
+                "<b>%{x}</b><br>"
+                "Correct: %{y:.1f}%"
+                "<extra></extra>"
+            ),
         )
+    )
 
-        ax.text(
-            i,
-            correct_value + incorrect_value / 2,
-            f"{incorrect_value:.1f}%",
-            ha="center",
-            va="center",
+    # Incorrect
+    fig.add_trace(
+        go.Bar(
+            x=chart_data.columns,
+            y=chart_data.loc["Incorrect"],
+            name="Incorrect",
+            text=[
+                f"{value:.1f}%"
+                for value in chart_data.loc["Incorrect"]
+            ],
+            textposition="inside",
+            hovertemplate=(
+                "<b>%{x}</b><br>"
+                "Incorrect: %{y:.1f}%"
+                "<extra></extra>"
+            ),
         )
-
-    ax.grid(
-        axis="y",
-        alpha=0.2,
     )
 
-    plt.tight_layout()
+    # --------------------------------------------------------
+    # Настройки графика
+    # --------------------------------------------------------
 
-    st.pyplot(
-        fig,
-        use_container_width=True,
+    fig.update_layout(
+        barmode="stack",
+
+        title="Correct and incorrect answers by response speed",
+
+        xaxis_title=None,
+
+        yaxis_title="Share of answers, %",
+
+        yaxis=dict(
+            range=[0, 100],
+            ticksuffix="%",
+        ),
+
+        legend=dict(
+            title="Answer type",
+        ),
+
+        height=500,
+
+        margin=dict(
+            l=60,
+            r=30,
+            t=70,
+            b=50,
+        ),
+
+        hovermode="x unified",
+
+        # Нормально растягивается вместе с контейнером
+        autosize=True,
     )
 
-    plt.close(fig)
+    # --------------------------------------------------------
+    # Streamlit
+    # --------------------------------------------------------
+
+    st.plotly_chart(
+    fig,
+    use_container_width=True,
+    config={
+        "displayModeBar": False,
+        "scrollZoom": False,
+        "doubleClick": False,
+    },
+)
