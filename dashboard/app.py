@@ -1,14 +1,14 @@
 import streamlit as st
 
 from data_loader import (
+    load_mart_users,
     load_mart_questions,
-    load_mart_events,
+    load_mart_topics,
 )
 
 from filter import (
     apply_part_filter,
     apply_progress_segment_filter,
-    apply_stage_filter,
     apply_min_attempts_filter,
 )
 
@@ -37,7 +37,7 @@ st.set_page_config(
 st.title("Riiid Answer Correctness Prediction")
 
 st.caption(
-    "Аналитика успешности пользователей, сложности вопросов "
+    "Аналитика успешности пользователей, сложности тем "
     "и поведения при ответах"
 )
 
@@ -46,7 +46,9 @@ st.caption(
 # LOAD DATA
 # ============================================================
 
+users = load_mart_users()
 questions = load_mart_questions()
+topics = load_mart_topics()
 
 
 # ============================================================
@@ -55,17 +57,14 @@ questions = load_mart_questions()
 
 st.sidebar.header("Фильтры")
 
+
+# ------------------------------------------------------------
+# Question-level filters
+# ------------------------------------------------------------
+
 filtered_questions = questions.copy()
 
 filtered_questions = apply_part_filter(
-    filtered_questions
-)
-
-filtered_questions = apply_progress_segment_filter(
-    filtered_questions
-)
-
-filtered_questions = apply_stage_filter(
     filtered_questions
 )
 
@@ -74,15 +73,22 @@ filtered_questions = apply_min_attempts_filter(
 )
 
 
-# ============================================================
-# EMPTY DATA CHECK
-# ============================================================
+# ------------------------------------------------------------
+# User-level filters
+# ------------------------------------------------------------
 
-if filtered_questions.empty:
-    st.warning(
-        "По выбранным фильтрам данных нет."
-    )
-    st.stop()
+filtered_users = users.copy()
+
+filtered_users = apply_progress_segment_filter(
+    filtered_users
+)
+
+
+# ------------------------------------------------------------
+# Topic-level data
+# ------------------------------------------------------------
+
+filtered_topics = topics.copy()
 
 
 # ============================================================
@@ -91,41 +97,52 @@ if filtered_questions.empty:
 
 st.subheader("Основные показатели")
 
-col1, col2, col3, col4 = st.columns(4)
+if filtered_questions.empty:
 
-
-with col1:
-    st.metric(
-        "Вопросов",
-        f"{filtered_questions['question_id'].nunique():,}".replace(",", " "),
+    st.warning(
+        "По выбранным фильтрам вопросов данных нет."
     )
 
+else:
 
-with col2:
-    attempts = filtered_questions["attempts"].sum()
+    col1, col2, col3, col4 = st.columns(4)
 
-    st.metric(
-        "Ответов",
-        f"{attempts:,.0f}".replace(",", " "),
-    )
+    with col1:
+        st.metric(
+            "Вопросов",
+            f"{filtered_questions['question_id'].nunique():,}".replace(",", " "),
+        )
 
+    with col2:
+        attempts = filtered_questions["attempts"].sum()
 
-with col3:
-    accuracy = filtered_questions["accuracy"].mean()
+        st.metric(
+            "Ответов",
+            f"{attempts:,.0f}".replace(",", " "),
+        )
 
-    st.metric(
-        "Средняя accuracy",
-        f"{accuracy:.1%}",
-    )
+    with col3:
+        correct_answers = filtered_questions["correct_answers"].sum()
+        total_answers = filtered_questions["attempts"].sum()
 
+        accuracy = (
+            correct_answers / total_answers
+            if total_answers > 0
+            else 0
+        )
 
-with col4:
-    difficulty = filtered_questions["difficulty"].mean()
+        st.metric(
+            "Accuracy",
+            f"{accuracy:.1%}",
+        )
 
-    st.metric(
-        "Средняя difficulty",
-        f"{difficulty:.1%}",
-    )
+    with col4:
+        difficulty = 1 - accuracy
+
+        st.metric(
+            "Difficulty",
+            f"{difficulty:.1%}",
+        )
 
 
 st.divider()
@@ -137,9 +154,17 @@ st.divider()
 
 st.header("Успешность пользователей")
 
-render_accuracy_chart(
-    filtered_questions
-)
+if filtered_users.empty:
+
+    st.warning(
+        "По выбранному Progress segment пользователей нет."
+    )
+
+else:
+
+    render_accuracy_chart(
+        filtered_users
+    )
 
 
 st.divider()
@@ -154,10 +179,10 @@ col_left, col_right = st.columns(2)
 
 with col_left:
 
-    st.subheader("Сложность вопросов")
+    st.subheader("Сложность тем")
 
     render_difficulty_chart(
-        filtered_questions
+        filtered_topics
     )
 
 
@@ -165,9 +190,27 @@ with col_right:
 
     st.subheader("Типы ошибок по скорости ответа")
 
-    render_fast_slow_chart(
-        filtered_questions
-    )
+    fast_slow_columns = {
+        "fast_correct_share",
+        "fast_incorrect_share",
+        "slow_correct_share",
+        "slow_incorrect_share",
+    }
+
+    if fast_slow_columns.issubset(filtered_questions.columns):
+
+        render_fast_slow_chart(
+            filtered_questions
+        )
+
+    else:
+
+        st.info(
+            "В текущем mart_questions нет полей "
+            "fast_correct_share / fast_incorrect_share / "
+            "slow_correct_share / slow_incorrect_share. "
+            "Остальные графики работают независимо."
+        )
 
 
 st.divider()
@@ -181,10 +224,8 @@ st.header("Лекции")
 
 try:
 
-    events = load_mart_events()
-
     render_lectures_chart(
-        events
+        filtered_topics
     )
 
 except Exception as error:
