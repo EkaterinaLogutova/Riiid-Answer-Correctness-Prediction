@@ -177,7 +177,7 @@ def render_lectures_chart(df: pd.DataFrame) -> None:
 
     st.altair_chart(
         chart,
-        use_container_width=True,
+        width="stretch",
     )
 
     st.caption(

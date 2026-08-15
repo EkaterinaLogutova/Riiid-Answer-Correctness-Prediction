@@ -276,20 +276,9 @@ def render_accuracy_chart(df: pd.DataFrame) -> None:
         )
     )
 
-    labels = base.mark_text(
-        dy=-18,
-        fontSize=12,
-    ).encode(
-        text=alt.Text(
-            "accuracy:Q",
-            format=".1%",
-        )
-    )
-
     chart = (
         line
         + points
-        + labels
     ).properties(
         height=430,
     )
