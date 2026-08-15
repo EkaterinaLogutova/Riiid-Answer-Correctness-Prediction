@@ -13,6 +13,7 @@ from filter import (
 )
 
 from charts.accuracy import render_accuracy_chart
+from charts.retention import render_retention_chart
 from charts.difficulty import render_difficulty_chart
 from charts.fast_slow import render_fast_slow_chart
 from charts.lectures import render_lectures_chart
@@ -60,6 +61,7 @@ st.sidebar.header("Фильтры")
 
 # ------------------------------------------------------------
 # Question-level filters
+# Используются для question-level графиков и KPI
 # ------------------------------------------------------------
 
 filtered_questions = questions.copy()
@@ -75,6 +77,7 @@ filtered_questions = apply_min_attempts_filter(
 
 # ------------------------------------------------------------
 # User-level filters
+# Используются для accuracy и retention
 # ------------------------------------------------------------
 
 filtered_users = users.copy()
@@ -86,6 +89,7 @@ filtered_users = apply_progress_segment_filter(
 
 # ------------------------------------------------------------
 # Topic-level data
+# Используется для difficulty и lectures
 # ------------------------------------------------------------
 
 filtered_topics = topics.copy()
@@ -149,7 +153,7 @@ st.divider()
 
 
 # ============================================================
-# ACCURACY
+# USER SUCCESS
 # ============================================================
 
 st.header("Успешность пользователей")
@@ -163,6 +167,12 @@ if filtered_users.empty:
 else:
 
     render_accuracy_chart(
+        filtered_users
+    )
+
+    st.divider()
+
+    render_retention_chart(
         filtered_users
     )
 
