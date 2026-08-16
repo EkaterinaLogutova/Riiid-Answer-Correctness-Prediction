@@ -176,7 +176,7 @@ if filtered_questions.empty:
 
 else:
 
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3 = st.columns(3)
 
     # --------------------------------------------------------
     # Questions
@@ -233,22 +233,13 @@ else:
         )
 
         st.metric(
-            "Accuracy",
+            "Точность",
             f"{accuracy:.1%}",
         )
 
     # --------------------------------------------------------
     # Difficulty
     # --------------------------------------------------------
-
-    with col4:
-
-        difficulty = 1 - accuracy
-
-        st.metric(
-            "Сложность",
-            f"{difficulty:.1%}",
-        )
 
 
 st.divider()

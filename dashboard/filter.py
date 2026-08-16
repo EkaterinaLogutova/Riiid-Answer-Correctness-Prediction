@@ -6,13 +6,36 @@ def multiselect_filter(
     df: pd.DataFrame,
     column: str,
     label: str,
+    value_labels: dict | None = None,
 ) -> pd.DataFrame:
     """Generic multiselect filter."""
+
     if column not in df.columns:
         return df
 
-    values = sorted(df[column].dropna().unique().tolist())
-    selected = st.multiselect(label, values, default=values, key=f"filter_{column}")
+    values = sorted(
+        df[column]
+        .dropna()
+        .unique()
+        .tolist()
+    )
+    if value_labels:
+        selected = st.multiselect(
+            label,
+            values,
+            default=values,
+            key=f"filter_{column}",
+            format_func=lambda value: str(
+                value_labels.get(value, value)
+            ),
+        )
+    else:
+        selected = st.multiselect(
+            label,
+            values,
+            default=values,
+            key=f"filter_{column}",
+        )
 
     if not selected:
         return df.iloc[0:0]
@@ -24,30 +47,50 @@ def apply_part_filter(
     df: pd.DataFrame,
     column: str = "part",
 ) -> pd.DataFrame:
-    return multiselect_filter(df, column, "Part")
+    return multiselect_filter(df, column, "Раздел")
 
 
 def apply_progress_segment_filter(
     df: pd.DataFrame,
     column: str = "progress_segment",
 ) -> pd.DataFrame:
-    return multiselect_filter(df, column, "Progress segment")
+
+    progress_labels = {
+        "declining": "Уровень снижается",
+        "progressing": "Прогрессируют",
+        "stable": "Стабильные",
+    }
+
+    return multiselect_filter(
+        df,
+        column,
+        "Сегмент прогресса",
+        value_labels=progress_labels,
+    )
 
 def apply_difficulty_filter(
     df: pd.DataFrame,
     column: str = "difficulty_level",
 ) -> pd.DataFrame:
+
+    difficulty_labels = {
+        "Easy": "Легко",
+        "Medium": "Средне",
+        "Hard": "Сложно",
+    }
+
     return multiselect_filter(
         df,
         column,
-        "Question difficulty",
+        "Сложность вопроса",
+        value_labels=difficulty_labels,
     )
 
 def apply_stage_filter(
     df: pd.DataFrame,
     column: str = "stage",
 ) -> pd.DataFrame:
-    return multiselect_filter(df, column, "Learning stage")
+    return multiselect_filter(df, column, "Этап обучения")
 
 
 def apply_min_attempts_filter(
@@ -66,7 +109,7 @@ def apply_min_attempts_filter(
     default_value = min(default_value, max_attempts)
 
     min_attempts = st.number_input(
-        "Minimum attempts",
+        "Минимальное количество попыток",
         min_value=1,
         max_value=max_attempts,
         value=default_value,
