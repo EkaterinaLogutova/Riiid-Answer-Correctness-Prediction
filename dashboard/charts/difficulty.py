@@ -150,6 +150,21 @@ def build_difficulty_chart(
         go.Bar(
             x=data["topic_label"],
             y=data["difficulty"],
+
+            # Для топ-5 используем явно различимые оттенки синего.
+            # Цвет кодирует место темы в рейтинге сложности,
+            # а высота столбца — реальное значение difficulty.
+            marker=dict(
+                color=[
+                    "#0b3c8c",
+                    "#1d4ed8",
+                    "#3b82f6",
+                    "#60a5fa",
+                    "#bfdbfe",
+                ][:len(data)],
+                line=dict(width=0),
+            ),
+
             text=data["difficulty"].map(lambda x: f"{x:.1%}"),
             textposition="outside",
             cliponaxis=False,
