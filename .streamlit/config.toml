@@ -1,4 +1,4 @@
 [theme.sidebar]
 primaryColor = "#d59bf6"
 [theme]
-base = "white"
+base = "light"
