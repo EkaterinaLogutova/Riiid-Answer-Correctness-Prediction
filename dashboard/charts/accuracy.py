@@ -226,7 +226,7 @@ def render_accuracy_chart(df: pd.DataFrame) -> None:
         ),
         y=alt.Y(
             "accuracy:Q",
-            title="Accuracy",
+            title="Точность",
             scale=alt.Scale(
                 domain=y_domain,
                 clamp=True,
@@ -242,7 +242,7 @@ def render_accuracy_chart(df: pd.DataFrame) -> None:
             ),
             alt.Tooltip(
                 "accuracy:Q",
-                title="Accuracy",
+                title="Точность",
                 format=".2%",
             ),
             alt.Tooltip(
@@ -291,5 +291,5 @@ def render_accuracy_chart(df: pd.DataFrame) -> None:
     st.caption(
         "Важно: график сравнивает группы пользователей с разной "
         "общей длительностью активности. Он не показывает изменение "
-        "accuracy одного и того же пользователя день за днём."
+        "точности одного и того же пользователя день за днём."
     )

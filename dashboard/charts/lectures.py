@@ -57,8 +57,8 @@ def render_lectures_chart(df: pd.DataFrame) -> None:
     Отображает таблицу сравнения accuracy по темам:
 
     1. Тема
-    2. Accuracy с лекцией
-    3. Accuracy без лекции
+    2. Точность с лекцией
+    3. Точность без лекции
     4. Разница
 
     Положительная разница подсвечивается зелёным.
@@ -99,8 +99,8 @@ def render_lectures_chart(df: pd.DataFrame) -> None:
     table = data.rename(
         columns={
             "tag": "Тема",
-            "accuracy_after_lecture": "Accuracy с лекцией",
-            "accuracy_without_lecture": "Accuracy без лекции",
+            "accuracy_after_lecture": "Точность с лекцией",
+            "accuracy_without_lecture": "Точность без лекции",
             "accuracy_difference": "Разница",
         }
     ).copy()
@@ -110,8 +110,8 @@ def render_lectures_chart(df: pd.DataFrame) -> None:
     # --------------------------------------------------------
 
     percentage_columns = [
-        "Accuracy с лекцией",
-        "Accuracy без лекции",
+        "Точность с лекцией",
+        "Точность без лекции",
         "Разница",
     ]
 
@@ -138,8 +138,8 @@ def render_lectures_chart(df: pd.DataFrame) -> None:
         table.style
         .format(
             {
-                "Accuracy с лекцией": "{:.1%}",
-                "Accuracy без лекции": "{:.1%}",
+                "Точность с лекцией": "{:.1%}",
+                "Точность без лекции": "{:.1%}",
                 "Разница": "{:+.1%}",
             }
         )
