@@ -339,3 +339,8 @@ plotly
 
 Подробные выводы и продуктовые рекомендации:
 [analytics_summary.md](docs/analytics_summary.md)
+
+## Продуктовые гипотезы
+
+Продуктовые гипотезы:
+[product_hypotesis.md](docs/product_hypotesis.md)
