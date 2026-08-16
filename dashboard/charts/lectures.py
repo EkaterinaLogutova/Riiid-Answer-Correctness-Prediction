@@ -1,15 +1,14 @@
-import altair as alt
 import pandas as pd
 import streamlit as st
 
 
 def prepare_lectures_data(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Подготавливает данные для сравнения accuracy
+    Подготавливает данные для таблицы сравнения accuracy
     после тематической лекции и без предыдущей лекции.
 
-    Используются только темы с достаточным количеством наблюдений
-    в обеих группах: enough_lecture_comparison = True.
+    Используются только темы с достаточным количеством
+    наблюдений в обеих группах.
     """
 
     required_columns = {
@@ -17,8 +16,6 @@ def prepare_lectures_data(df: pd.DataFrame) -> pd.DataFrame:
         "accuracy_after_lecture",
         "accuracy_without_lecture",
         "accuracy_difference",
-        "attempts_after_lecture",
-        "attempts_without_lecture",
         "enough_lecture_comparison",
     }
 
@@ -36,8 +33,6 @@ def prepare_lectures_data(df: pd.DataFrame) -> pd.DataFrame:
             "accuracy_after_lecture",
             "accuracy_without_lecture",
             "accuracy_difference",
-            "attempts_after_lecture",
-            "attempts_without_lecture",
         ],
     ].copy()
 
@@ -45,143 +40,129 @@ def prepare_lectures_data(df: pd.DataFrame) -> pd.DataFrame:
         subset=[
             "accuracy_after_lecture",
             "accuracy_without_lecture",
+            "accuracy_difference",
         ]
     )
 
-    data["total_comparison_attempts"] = (
-        data["attempts_after_lecture"]
-        + data["attempts_without_lecture"]
-    )
+    data = data.sort_values(
+        "accuracy_difference",
+        ascending=False,
+        )
 
     return data
 
 
 def render_lectures_chart(df: pd.DataFrame) -> None:
     """
-    Строит scatter plot зависимости качества ответа
-    от наличия предыдущего просмотра тематической лекции.
+    Отображает таблицу сравнения accuracy по темам:
 
-    X = accuracy_without_lecture
-    Y = accuracy_after_lecture
+    1. Тема
+    2. Accuracy с лекцией
+    3. Accuracy без лекции
+    4. Разница
 
-    Точки выше диагонали y=x:
-        accuracy после лекции выше.
+    Положительная разница подсвечивается зелёным.
+    Нулевая или отрицательная — красным.
 
-    Точки ниже диагонали:
-        accuracy без предыдущей лекции выше.
+    Используются только готовые данные mart_topics.
     """
 
     st.subheader("Качество ответов и просмотр лекций")
 
     st.caption(
-        "Каждая точка — образовательная тема. "
-        "Точки выше диагонали соответствуют темам, где наблюдаемая "
-        "accuracy после предыдущего просмотра тематической лекции выше."
+        "Сравнение наблюдаемой accuracy по темам "
+        "для ответов после просмотра тематической лекции "
+        "и без предыдущего просмотра."
     )
 
     if df.empty:
         st.info("Нет данных для выбранных фильтров.")
         return
 
-    chart_data = prepare_lectures_data(df)
+    try:
+        data = prepare_lectures_data(df)
+    except ValueError as error:
+        st.error(str(error))
+        return
 
-    if chart_data.empty:
+    if data.empty:
         st.info(
             "Нет тем с достаточным количеством наблюдений "
             "для сравнения."
         )
         return
 
-    # Диагональ y = x — ориентир равной accuracy.
-    diagonal_data = pd.DataFrame({
-        "accuracy_without_lecture": [0, 1],
-        "accuracy_after_lecture": [0, 1],
-    })
+    # --------------------------------------------------------
+    # Формируем таблицу
+    # --------------------------------------------------------
 
-    diagonal = (
-        alt.Chart(diagonal_data)
-        .mark_line(
-            strokeDash=[6, 6],
-            opacity=0.6,
-        )
-        .encode(
-            x=alt.X(
-                "accuracy_without_lecture:Q",
-                scale=alt.Scale(domain=[0, 1]),
-            ),
-            y=alt.Y(
-                "accuracy_after_lecture:Q",
-                scale=alt.Scale(domain=[0, 1]),
-            ),
-        )
-    )
+    table = data.rename(
+        columns={
+            "tag": "Тема",
+            "accuracy_after_lecture": "Accuracy с лекцией",
+            "accuracy_without_lecture": "Accuracy без лекции",
+            "accuracy_difference": "Разница",
+        }
+    ).copy()
 
-    points = (
-        alt.Chart(chart_data)
-        .mark_circle(
-            size=90,
-            opacity=0.75,
+    # --------------------------------------------------------
+    # Форматирование процентов
+    # --------------------------------------------------------
+
+    percentage_columns = [
+        "Accuracy с лекцией",
+        "Accuracy без лекции",
+        "Разница",
+    ]
+
+    # --------------------------------------------------------
+    # Подсветка разницы
+    # --------------------------------------------------------
+
+    def highlight_difference(value):
+        if pd.isna(value):
+            return ""
+
+        if value > 0:
+            return (
+                "background-color: #d4edda; "
+                "color: #155724;"
+            )
+
+        return (
+            "background-color: #f8d7da; "
+            "color: #721c24;"
         )
-        .encode(
-            x=alt.X(
-                "accuracy_without_lecture:Q",
-                title="Accuracy без предыдущей лекции",
-                scale=alt.Scale(domain=[0, 1]),
-                axis=alt.Axis(format=".0%"),
-            ),
-            y=alt.Y(
-                "accuracy_after_lecture:Q",
-                title="Accuracy после лекции",
-                scale=alt.Scale(domain=[0, 1]),
-                axis=alt.Axis(format=".0%"),
-            ),
-            tooltip=[
-                alt.Tooltip(
-                    "tag:N",
-                    title="Тема",
-                ),
-                alt.Tooltip(
-                    "accuracy_without_lecture:Q",
-                    title="Без лекции",
-                    format=".2%",
-                ),
-                alt.Tooltip(
-                    "accuracy_after_lecture:Q",
-                    title="После лекции",
-                    format=".2%",
-                ),
-                alt.Tooltip(
-                    "accuracy_difference:Q",
-                    title="Разница",
-                    format="+.2%",
-                ),
-                alt.Tooltip(
-                    "attempts_without_lecture:Q",
-                    title="Ответов без лекции",
-                    format=",",
-                ),
-                alt.Tooltip(
-                    "attempts_after_lecture:Q",
-                    title="Ответов после лекции",
-                    format=",",
-                ),
-            ],
+
+    styled_table = (
+        table.style
+        .format(
+            {
+                "Accuracy с лекцией": "{:.1%}",
+                "Accuracy без лекции": "{:.1%}",
+                "Разница": "{:+.1%}",
+            }
+        )
+        .map(
+            highlight_difference,
+            subset=["Разница"],
         )
     )
 
-    chart = (
-        diagonal + points
-    ).properties(
-        height=450
-    ).interactive()
+    # --------------------------------------------------------
+    # Таблица
+    # --------------------------------------------------------
 
-    st.altair_chart(
-        chart,
+    st.dataframe(
+        styled_table,
         width="stretch",
+        hide_index=True,
+        height=500,
     )
 
     st.caption(
-        "График показывает наблюдаемую связь, а не причинный эффект: "
-        "различия accuracy могут быть связаны с составом пользователей, "
-        "сложностью вопросов и стадией обучения."
+        "Зелёный цвет — accuracy после лекции выше. "
+        "Красный — accuracy после лекции не выше accuracy "
+        "без предыдущей лекции. "
+        "Разница не является доказательством причинного эффекта лекции."
     )
