@@ -7,6 +7,7 @@ def multiselect_filter(
     column: str,
     label: str,
     value_labels: dict | None = None,
+    help_text: str | None = None,
 ) -> pd.DataFrame:
     """Generic multiselect filter."""
 
@@ -28,6 +29,7 @@ def multiselect_filter(
             format_func=lambda value: str(
                 value_labels.get(value, value)
             ),
+            help=help_text,
         )
     else:
         selected = st.multiselect(
@@ -35,6 +37,7 @@ def multiselect_filter(
             values,
             default=values,
             key=f"filter_{column}",
+            help=help_text,
         )
 
     if not selected:
@@ -47,7 +50,10 @@ def apply_part_filter(
     df: pd.DataFrame,
     column: str = "part",
 ) -> pd.DataFrame:
-    return multiselect_filter(df, column, "Раздел")
+    return multiselect_filter(df, column, "Раздел", help_text=(
+            "Раздел, к которому относится вопрос. "
+            "Можно выбрать один или несколько разделов."
+        ),)
 
 
 def apply_progress_segment_filter(
@@ -66,6 +72,11 @@ def apply_progress_segment_filter(
         column,
         "Сегмент прогресса",
         value_labels=progress_labels,
+        help_text=(
+            "**Уровень снижается** — результаты пользователя ухудшаются.\n\n"
+            "**Прогрессируют** — результаты пользователя улучшаются.\n\n"
+            "**Стабильные** — результаты остаются примерно на одном уровне."
+        ),
     )
 
 def apply_difficulty_filter(
@@ -84,6 +95,9 @@ def apply_difficulty_filter(
         column,
         "Сложность вопроса",
         value_labels=difficulty_labels,
+        help_text=(
+                    "Уровень сложности вопроса."
+        )
     )
 
 def apply_stage_filter(
@@ -114,6 +128,10 @@ def apply_min_attempts_filter(
         max_value=max_attempts,
         value=default_value,
         step=10,
+        help=(
+        "Показывает только вопросы, у которых количество "
+        "попыток не меньше указанного значения."
+    )
     )
 
     return df[df[attempts_column] >= min_attempts]
