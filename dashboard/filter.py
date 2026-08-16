@@ -8,6 +8,7 @@ def multiselect_filter(
     label: str,
     value_labels: dict | None = None,
 ) -> pd.DataFrame:
+    """Generic multiselect filter."""
 
     if column not in df.columns:
         return df
@@ -18,18 +19,23 @@ def multiselect_filter(
         .unique()
         .tolist()
     )
-
-    selected = st.multiselect(
-        label,
-        values,
-        default=values,
-        key=f"filter_{column}",
-        format_func=lambda value: (
-            value_labels.get(value, value)
-            if value_labels
-            else value
-        ),
-    )
+    if value_labels:
+        selected = st.multiselect(
+            label,
+            values,
+            default=values,
+            key=f"filter_{column}",
+            format_func=lambda value: str(
+                value_labels.get(value, value)
+            ),
+        )
+    else:
+        selected = st.multiselect(
+            label,
+            values,
+            default=values,
+            key=f"filter_{column}",
+        )
 
     if not selected:
         return df.iloc[0:0]
