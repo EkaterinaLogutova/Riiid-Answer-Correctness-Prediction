@@ -28,6 +28,10 @@ from charts.fast_slow import render_fast_slow_chart
 from charts.lectures import render_lectures_chart
 
 
+# ============================================================
+# CONFIG
+# ============================================================
+
 st.set_page_config(
     page_title="Riiid Analytics",
     page_icon="📊",
@@ -36,16 +40,16 @@ st.set_page_config(
 )
 
 
-st.title("Как удержать пользователя в образовательном продукте?")
+st.title("Riiid Answer Correctness Prediction")
 
 st.caption(
-    "Понимаем, где пользователи теряют интерес к обучению "
-    "и какие изменения могут помочь им остаться. "
+    "Аналитика удержания и успешности пользователей, "
+    "сложности тем, скорости ответов и использования лекций"
 )
 
 
 # ============================================================
-# ЗАГРУЗКА ДАННЫХ
+# LOAD DATA
 # ============================================================
 
 users = load_mart_users()
@@ -54,71 +58,165 @@ topics = load_mart_topics()
 
 
 # ============================================================
-# ФИЛЬТРЫ — ЗАКРЕПЛЁННАЯ БОКОВАЯ ПАНЕЛЬ
+# FILTERS
 # ============================================================
-
-# Все виджеты фильтров создаются внутри st.sidebar.
-# Поэтому панель остаётся доступной при прокрутке дашборда,
-# а изменение любого фильтра вызывает перерасчёт страницы.
 
 with st.sidebar:
     st.header("Фильтры")
 
+    # --------------------------------------------------------
+    # ВОПРОСЫ
+    # --------------------------------------------------------
+
     st.subheader("Вопросы")
 
     filtered_questions = questions.copy()
+
+    # Part
     filtered_questions = apply_part_filter(
         filtered_questions
     )
-    filtered_questions = apply_min_attempts_filter(
+
+    # Difficulty
+    filtered_questions = apply_difficulty_filter(
         filtered_questions
     )
-    filtered_questions = apply_difficulty_filter(
+
+    # Minimum attempts
+    filtered_questions = apply_min_attempts_filter(
         filtered_questions
     )
 
     st.divider()
 
+    # --------------------------------------------------------
+    # ПОЛЬЗОВАТЕЛИ
+    # --------------------------------------------------------
+
     st.subheader("Пользователи")
 
     filtered_users = users.copy()
+
     filtered_users = apply_progress_segment_filter(
         filtered_users
     )
 
 
-# Для тематических графиков пока используется mart_topics
-# без дополнительных фильтров.
+# ============================================================
+# TOPICS
+# ============================================================
+
+# mart_topics имеет гранулярность tag.
+#
+# Если применены фильтры вопросов, определяем,
+# какие tag связаны с оставшимися вопросами.
+#
+# Никаких пересчётов метрик здесь нет:
+# просто выбираются уже рассчитанные строки mart_topics.
+
 filtered_topics = topics.copy()
+
+question_filters_active = (
+    len(filtered_questions)
+    != len(questions)
+)
+
+if question_filters_active:
+
+    # Получаем question_id из отфильтрованных вопросов.
+    selected_question_ids = set(
+        filtered_questions["question_id"]
+    )
+
+    # --------------------------------------------------------
+    # Если в questions есть tags, используем их напрямую.
+    # --------------------------------------------------------
+
+    if "tags" in questions.columns:
+
+        topic_tags = set()
+
+        for tags in filtered_questions["tags"].dropna():
+
+            if isinstance(tags, str):
+
+                for tag in tags.split():
+
+                    try:
+                        topic_tags.add(int(tag))
+                    except ValueError:
+                        continue
+
+        if "tag" in filtered_topics.columns:
+
+            filtered_topics = filtered_topics[
+                filtered_topics["tag"].isin(topic_tags)
+            ]
 
 
 # ============================================================
-# ОСНОВНЫЕ ПОКАЗАТЕЛИ
+# KPI
 # ============================================================
 
 st.subheader("Основные показатели")
 
 if filtered_questions.empty:
-    st.warning("По выбранным фильтрам вопросов данных нет.")
+
+    st.warning(
+        "По выбранным фильтрам вопросов данных нет."
+    )
+
 else:
+
     col1, col2, col3, col4 = st.columns(4)
 
+    # --------------------------------------------------------
+    # Questions
+    # --------------------------------------------------------
+
     with col1:
-        st.metric(
-            "Вопросов",
-            f"{filtered_questions['question_id'].nunique():,}".replace(",", " "),
+
+        question_count = (
+            filtered_questions["question_id"]
+            .nunique()
         )
 
+        st.metric(
+            "Вопросов",
+            f"{question_count:,}".replace(",", " "),
+        )
+
+    # --------------------------------------------------------
+    # Attempts
+    # --------------------------------------------------------
+
     with col2:
-        attempts = filtered_questions["attempts"].sum()
+
+        attempts = (
+            filtered_questions["attempts"]
+            .sum()
+        )
+
         st.metric(
             "Ответов",
             f"{attempts:,.0f}".replace(",", " "),
         )
 
+    # --------------------------------------------------------
+    # Accuracy
+    # --------------------------------------------------------
+
     with col3:
-        correct_answers = filtered_questions["correct_answers"].sum()
-        total_answers = filtered_questions["attempts"].sum()
+
+        correct_answers = (
+            filtered_questions["correct_answers"]
+            .sum()
+        )
+
+        total_answers = (
+            filtered_questions["attempts"]
+            .sum()
+        )
 
         accuracy = (
             correct_answers / total_answers
@@ -131,7 +229,12 @@ else:
             f"{accuracy:.1%}",
         )
 
+    # --------------------------------------------------------
+    # Difficulty
+    # --------------------------------------------------------
+
     with col4:
+
         difficulty = 1 - accuracy
 
         st.metric(
@@ -144,69 +247,32 @@ st.divider()
 
 
 # ============================================================
-# 1. ДВА RETENTION-ГРАФИКА РЯДОМ
+# 1. RETENTION
 # ============================================================
 
 st.header("Retention пользователей")
 
 if filtered_users.empty:
+
     st.warning(
-        "По выбранному сегменту прогресса пользователей нет."
+        "По выбранному сегменту прогресса "
+        "пользователей нет."
     )
+
 else:
+
     retention_left, retention_right = st.columns(2)
 
     with retention_left:
-        render_retention_days_chart(filtered_users)
+
+        render_retention_days_chart(
+            filtered_users
+        )
 
     with retention_right:
-        render_retention_question_chart(filtered_users)
 
-
-st.divider()
-
-
-# ============================================================
-# 2. УСПЕШНОСТЬ
-# ============================================================
-
-st.header("Успешность пользователей")
-
-if filtered_users.empty:
-    st.warning(
-        "По выбранному сегменту прогресса пользователей нет."
-    )
-else:
-    render_accuracy_chart(filtered_users)
-
-
-st.divider()
-
-
-# ============================================================
-# 3. СЛОЖНЫЕ ТЕМЫ + СКОРОСТЬ ОТВЕТОВ
-# ============================================================
-
-content_left, content_right = st.columns(2)
-
-with content_left:
-    render_difficulty_chart(filtered_topics)
-
-with content_right:
-    fast_slow_columns = {
-        "fast_correct_share",
-        "fast_incorrect_share",
-        "slow_correct_share",
-        "slow_incorrect_share",
-    }
-
-    if fast_slow_columns.issubset(filtered_questions.columns):
-        render_fast_slow_chart(filtered_questions)
-    else:
-        st.subheader("Типы ответов по скорости")
-        st.info(
-            "В текущем mart_questions нет полей, "
-            "необходимых для графика быстрых и медленных ответов."
+        render_retention_question_chart(
+            filtered_users
         )
 
 
@@ -214,14 +280,123 @@ st.divider()
 
 
 # ============================================================
-# 4. ПРОСМОТР ЛЕКЦИЙ
+# 2. ACCURACY
 # ============================================================
 
-st.header("Просмотр лекций и качество ответов")
+st.header("Успешность пользователей")
 
-try:
-    render_lectures_chart(filtered_topics)
-except Exception as error:
+if filtered_users.empty:
+
     st.warning(
-        f"Не удалось построить график лекций: {error}"
+        "По выбранному сегменту прогресса "
+        "пользователей нет."
     )
+
+else:
+
+    render_accuracy_chart(
+        filtered_users
+    )
+
+
+st.divider()
+
+
+# ============================================================
+# 3. DIFFICULTY + FAST/SLOW
+# ============================================================
+
+content_left, content_right = st.columns(2)
+
+
+# ------------------------------------------------------------
+# Difficulty by topics
+# ------------------------------------------------------------
+
+with content_left:
+
+    if filtered_topics.empty:
+
+        st.info(
+            "По выбранным фильтрам тем нет."
+        )
+
+    else:
+
+        render_difficulty_chart(
+            filtered_topics
+        )
+
+
+# ------------------------------------------------------------
+# Fast / Slow
+# ------------------------------------------------------------
+
+with content_right:
+
+    fast_slow_columns = {
+        "fast_correct_share",
+        "fast_incorrect_share",
+        "slow_correct_share",
+        "slow_incorrect_share",
+    }
+
+    if fast_slow_columns.issubset(
+        filtered_questions.columns
+    ):
+
+        if filtered_questions.empty:
+
+            st.info(
+                "По выбранным фильтрам вопросов нет."
+            )
+
+        else:
+
+            render_fast_slow_chart(
+                filtered_questions
+            )
+
+    else:
+
+        st.subheader(
+            "Типы ответов по скорости"
+        )
+
+        st.info(
+            "В текущем mart_questions нет полей, "
+            "необходимых для графика быстрых "
+            "и медленных ответов."
+        )
+
+
+st.divider()
+
+
+# ============================================================
+# 4. LECTURES
+# ============================================================
+
+st.header(
+    "Просмотр лекций и качество ответов"
+)
+
+if filtered_topics.empty:
+
+    st.info(
+        "По выбранным фильтрам тем нет."
+    )
+
+else:
+
+    try:
+
+        render_lectures_chart(
+            filtered_topics
+        )
+
+    except Exception as error:
+
+        st.warning(
+            f"Не удалось построить график лекций: {error}"
+        )
