@@ -39,6 +39,13 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+st.html("""
+<style>
+    .stMainBlockContainer {
+        padding-top: 2rem;
+    }
+</style>
+""")
 
 st.title("Как удержать пользователя в образовательном продукте?")
 
