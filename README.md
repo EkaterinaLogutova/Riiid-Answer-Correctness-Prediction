@@ -334,3 +334,8 @@ plotly
 ### 👉 [Как удержать пользователя в обучении?](https://riiid-answer-correctness-prediction-shoklszb2utudzhnxbj7xe.streamlit.app)
 
 Интерактивный дашборд позволяет исследовать retention, успешность пользователей, сложность образовательного контента и взаимодействие с лекциями.
+
+## Аналитические выводы
+
+Подробные выводы и продуктовые рекомендации:
+[analytics_summary.md](docs/analytics_summary.md)
