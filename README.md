@@ -344,3 +344,8 @@ plotly
 
 Продуктовые гипотезы:
 [product_hypotesis.md](docs/product_hypotesis.md)
+
+## AB-tests
+
+AB-tests:
+[ab_tests_retention_education.md](docs/ab_tests_retention_education.md)
