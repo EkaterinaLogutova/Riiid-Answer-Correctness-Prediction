@@ -51,7 +51,7 @@ def apply_part_filter(
     column: str = "part",
 ) -> pd.DataFrame:
     return multiselect_filter(df, column, "Раздел", help_text=(
-            "Раздел, к которому относится вопрос. "
+            "Раздел, к которому относятся темы и вопросы по темам. "
             "Можно выбрать один или несколько разделов."
         ),)
 
